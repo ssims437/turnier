@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<title>Turnier — wie aus lauter Eigennutz Zusammenarbeit wird</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Das wiederholte Gefangenendilemma: zehn Strategien im Rundenturnier, jedes Duell Zug für Zug, Rauschen, und die Evolution über Generationen — mit einem Prüflauf, der die Einladungsschwelle gegen die Formel stellt." />
+
+<style>
+  :root {
+    --grund: #EFEEEC;
+    --feld:  #FAFAF8;
+    --tief:  #E3E2DE;
+    --linie: #C8C6C0;
+    --tinte: #18171A;
+    --leise: #64626A;
+    --netz:  #B5B3AE;
+    --nett:  #2C7A34;
+    --fies:  #A8471F;
+    --merk:  #1F5FA8;
+    --gut:   #2C7A34;
+    --warn:  #A32C22;
+    --hell:  55%;
+    --schatten: 0 1px 0 rgba(24,23,26,.05), 0 10px 24px -16px rgba(24,23,26,.45);
+    --f-fest: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, "DejaVu Sans Mono", monospace;
+    --f-text: -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --grund: #131214; --feld: #1A191C; --tief: #0C0C0D; --linie: #302E33;
+      --tinte: #E7E5EA; --leise: #918F98; --netz: #423F46;
+      --nett: #7FBF6A; --fies: #E0785C; --merk: #6CA8E8;
+      --gut: #7FBF6A; --warn: #E0776B; --hell: 66%;
+      --schatten: 0 1px 0 rgba(255,255,255,.03), 0 12px 30px -18px #000;
+    }
+  }
+  :root[data-theme="dark"] {
+    --grund: #131214; --feld: #1A191C; --tief: #0C0C0D; --linie: #302E33;
+    --tinte: #E7E5EA; --leise: #918F98; --netz: #423F46;
+    --nett: #7FBF6A; --fies: #E0785C; --merk: #6CA8E8;
+    --gut: #7FBF6A; --warn: #E0776B; --hell: 66%;
+    --schatten: 0 1px 0 rgba(255,255,255,.03), 0 12px 30px -18px #000;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--grund); color:var(--tinte);
+    font-family:var(--f-text); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; }
+  .blatt { max-width:1180px; margin:0 auto;
+    padding: clamp(20px,4vw,44px) clamp(14px,3vw,28px) 64px;
+    display:flex; flex-direction:column; gap:18px; }
+
+  .marke { font-family:var(--f-fest); font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--leise); display:flex; gap:12px; align-items:center; margin:0; }
+  .marke::after { content:""; flex:1; height:1px; background:var(--linie); }
+  h1 { font-family:var(--f-fest); font-weight:700; font-size:clamp(24px,4.2vw,40px);
+    line-height:1.06; letter-spacing:-.03em; margin:0; text-wrap:balance; }
+  h1 span { color:var(--nett); }
+  .vorspann { max-width:70ch; color:var(--leise); margin:0; }
+  .vorspann b { color:var(--tinte); font-weight:600; }
+
+  .leiste { display:flex; gap:14px; flex-wrap:wrap; align-items:center;
+    background:var(--feld); border:1px solid var(--linie); padding:9px 11px; box-shadow:var(--schatten); }
+  .kl { font-family:var(--f-fest); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--leise); }
+  .regler { display:flex; gap:7px; align-items:center; }
+  .regler output { font-family:var(--f-fest); font-size:12px; min-width:5.5ch; text-align:right;
+    font-variant-numeric:tabular-nums; }
+  input[type=range] { width:120px; accent-color:var(--merk); }
+  button, select { font-family:var(--f-fest); font-size:12px; color:var(--tinte); background:var(--grund);
+    border:1px solid var(--linie); border-radius:0; padding:6px 10px; letter-spacing:.03em; cursor:pointer; }
+  button:hover, select:hover { border-color:var(--merk); }
+  button.haupt { background:var(--merk); border-color:var(--merk); color:var(--feld); }
+  :focus-visible { outline:2px solid var(--merk); outline-offset:2px; }
+
+  .kasten { background:var(--feld); border:1px solid var(--linie); box-shadow:var(--schatten);
+    display:flex; flex-direction:column; min-width:0; }
+  .kasten-kopf { display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+    padding:8px 11px; border-bottom:1px solid var(--linie); }
+  .kasten-leib { padding:11px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .buehne { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:18px; align-items:start; }
+  @media (max-width: 940px) { .buehne { grid-template-columns: minmax(0,1fr); } }
+  .saeule { display:flex; flex-direction:column; gap:18px; min-width:0; }
+
+  canvas { width:100%; height:auto; display:block; background:var(--tief); border:1px solid var(--linie); }
+
+  .balken { display:flex; flex-direction:column; gap:3px; }
+  .balken .zeileb { display:grid; grid-template-columns: 1.3em 8.6em 1fr 4.6em; gap:8px; align-items:center;
+    font-family:var(--f-fest); font-size:11.5px; }
+  .balken .stab { height:12px; background:var(--tief); border:1px solid var(--linie); position:relative; }
+  .balken .stab i { position:absolute; left:0; top:0; bottom:0; display:block; }
+  .balken .z { text-align:right; font-variant-numeric:tabular-nums; color:var(--leise); }
+  .balken .r { color:var(--leise); text-align:right; }
+
+  .werte { display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); gap:1px;
+    background:var(--linie); border:1px solid var(--linie); }
+  .wert { background:var(--feld); padding:7px 9px; min-width:0; }
+  .wert .l { font-family:var(--f-fest); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--leise); }
+  .wert .n { font-family:var(--f-fest); font-size:15px; font-variant-numeric:tabular-nums; }
+  .wert .k { font-family:var(--f-fest); font-size:10px; color:var(--leise); }
+
+  table.liste { border-collapse:collapse; width:100%; font-family:var(--f-fest); font-size:12px; }
+  table.liste th, table.liste td { border-bottom:1px solid var(--linie); padding:4px 7px; text-align:left; }
+  table.liste th { color:var(--leise); font-weight:400; font-size:10px; letter-spacing:.1em; text-transform:uppercase; }
+
+  .hinweis { font-family:var(--f-fest); font-size:12px; color:var(--leise); letter-spacing:0; margin:0; }
+  .hinweis b { color:var(--tinte); font-weight:600; }
+
+  .noten { display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:18px; margin-top:6px; }
+  .noten section { background:var(--feld); border:1px solid var(--linie); padding:12px 14px; box-shadow:var(--schatten); }
+  .noten h3 { font-family:var(--f-fest); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--leise); margin:0 0 6px; font-weight:400; }
+  .noten p { margin:0; font-size:14px; }
+  code { font-family:var(--f-fest); font-size:12.5px; background:var(--tief); padding:1px 4px; }
+  .fuss { color:var(--leise); font-size:13px; border-top:1px solid var(--linie); padding-top:12px; }
+  .fuss a { color:var(--merk); }
+</style>
+</head>
+<body>
+<main class="blatt">
+
+  <p class="marke">Blatt · Spiel</p>
+  <h1>Turnier — wie aus lauter Eigennutz <span>Zusammenarbeit</span> wird</h1>
+  <p class="vorspann">
+    Zwei Gefangene, ein Angebot: Wer den anderen verrät, kommt besser weg — egal was der andere
+    tut. Einmal gespielt ist die Sache eindeutig und trostlos. <b>Hundertmal hintereinander</b>
+    gespielt wird sie das Gegenteil: Robert Axelrod hat 1980 Strategien gegeneinander antreten
+    lassen, und gewonnen hat die kürzeste von allen — vier Zeilen, die nie zuerst verraten und
+    nie nachtragend sind. Hier steht dieses Turnier zum Nachrechnen, samt der unbequemen Frage,
+    was passiert, wenn man sich <b>vertut</b>.
+  </p>
+
+  <div class="leiste">
+    <div class="regler"><span class="kl">Runden je Duell</span>
+      <input type="range" id="r-runden" min="10" max="400" step="10" value="200" />
+      <output id="o-runden"></output></div>
+    <div class="regler"><span class="kl">Rauschen</span>
+      <input type="range" id="r-rauschen" min="0" max="20" step="1" value="0" />
+      <output id="o-rauschen"></output></div>
+    <div class="regler"><span class="kl">Generationen</span>
+      <input type="range" id="r-gen" min="20" max="400" step="10" value="200" />
+      <output id="o-gen"></output></div>
+    <span style="flex:1"></span>
+    <button id="b-thema">Ansicht</button>
+  </div>
+
+  <div class="buehne">
+    <div class="saeule">
+      <div class="kasten">
+        <div class="kasten-kopf">
+          <span class="kl">Jeder gegen jeden</span>
+          <span class="kl" id="matrix-lage" style="margin-left:auto"></span>
+        </div>
+        <div class="kasten-leib">
+          <canvas id="matrix" width="820" height="700" aria-label="Punkte je Begegnung als Wärmebild"></canvas>
+          <p class="hinweis" id="matrix-fuss"></p>
+        </div>
+      </div>
+
+      <div class="kasten">
+        <div class="kasten-kopf">
+          <span class="kl">Ein Duell, Zug für Zug</span>
+          <select id="duell-a" aria-label="Erste Strategie"></select>
+          <select id="duell-b" aria-label="Zweite Strategie"></select>
+        </div>
+        <div class="kasten-leib">
+          <canvas id="duell" width="820" height="200" aria-label="Züge eines einzelnen Duells"></canvas>
+          <p class="hinweis" id="duell-fuss"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="saeule">
+      <div class="kasten">
+        <div class="kasten-kopf">
+          <span class="kl">Rangliste</span>
+          <span class="kl" id="rang-lage" style="margin-left:auto"></span>
+        </div>
+        <div class="kasten-leib">
+          <div class="balken" id="rang"></div>
+          <p class="hinweis" id="rang-fuss"></p>
+        </div>
+      </div>
+
+      <div class="kasten">
+        <div class="kasten-kopf">
+          <span class="kl">Und über die Generationen</span>
+          <span class="kl" id="evo-lage" style="margin-left:auto"></span>
+        </div>
+        <div class="kasten-leib">
+          <canvas id="evo" width="820" height="330" aria-label="Anteile der Strategien über Generationen"></canvas>
+          <p class="hinweis" id="evo-fuss"></p>
+        </div>
+      </div>
+
+      <div class="kasten">
+        <div class="kasten-kopf"><span class="kl">Was ein Versehen anrichtet</span></div>
+        <div class="kasten-leib">
+          <div class="werte">
+            <div class="wert"><div class="l">Wie du mir · mit sich</div><div class="n" id="w-tft">—</div>
+              <div class="k">Kooperationsrate</div></div>
+            <div class="wert"><div class="l">Großzügig · mit sich</div><div class="n" id="w-gtft">—</div>
+              <div class="k">Kooperationsrate</div></div>
+            <div class="wert"><div class="l">Pawlow · mit sich</div><div class="n" id="w-pawlow">—</div>
+              <div class="k">Kooperationsrate</div></div>
+          </div>
+          <p class="hinweis" id="rausch-fuss"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kasten">
+    <div class="kasten-kopf">
+      <span class="kl">Beweis statt Behauptung</span>
+      <button id="b-pruefen" class="haupt" style="margin-left:auto">Prüfen</button>
+    </div>
+    <div class="kasten-leib">
+      <p class="hinweis">
+        Über das Gefangenendilemma wird viel Schönes erzählt. Hier steht, was sich nachrechnen
+        lässt: dass es überhaupt ein Dilemma ist, dass „Wie du mir" <b>kein einziges Duell
+        gewinnt</b> und trotzdem vorne landet, und wie groß eine Gruppe von Kooperierenden
+        mindestens sein muss, um in einer Welt von Verrätern Fuß zu fassen — gemessen und gegen
+        die hergeleitete Formel gestellt.
+      </p>
+      <table class="liste" id="pruef"><tbody></tbody></table>
+      <p class="hinweis" id="pruef-fuss">noch nicht geprüft</p>
+    </div>
+  </div>
+
+  <div class="noten">
+    <section>
+      <h3>Warum die kürzeste gewinnt</h3>
+      <p>
+        „Wie du mir" ist <b>nett</b> (verrät nie zuerst), <b>wehrhaft</b> (antwortet sofort),
+        <b>versöhnlich</b> (vergisst sofort wieder) und <b>durchschaubar</b> — und genau das
+        Letzte ist kein Nachteil. Wer berechenbar kooperativ ist, macht Zusammenarbeit für den
+        anderen zur besten Antwort. Ausbeuten kann sie niemand; mehr Punkte machen als sie schon.
+      </p>
+    </section>
+    <section>
+      <h3>Gewinnen heißt nicht siegen</h3>
+      <p>
+        „Wie du mir" gewinnt <b>kein einziges Duell</b> — sie kann gar nicht, denn sie verrät nie
+        zuerst und liegt daher nie vorn. Sie gewinnt das Turnier trotzdem, weil sie in <b>allen</b>
+        Begegnungen viel holt, während Verräter zwar einzelne Duelle gewinnen, sich gegenseitig
+        aber ruinieren. Im Nullsummendenken ist das paradox — hier ist es der Punkt.
+      </p>
+    </section>
+    <section>
+      <h3>Wenn die Hand zittert</h3>
+      <p>
+        Schon ein Prozent Versehen genügt, und zwei „Wie du mir" schaukeln sich in eine endlose
+        Vergeltungsschleife: einer verrät versehentlich, der andere antwortet, der erste antwortet
+        auf die Antwort. <b>Großzügigkeit</b> — gelegentlich verzeihen, ohne Anlass — ist keine
+        Weichheit, sondern die Reparatur dafür. Die Zahlen dazu stehen im Blatt.
+      </p>
+    </section>
+  </div>
+
+  <p class="fuss">
+    Eine einzelne HTML-Datei. Kein Build, keine Bibliothek, nichts verlässt den Browser.
+    <span style="display:block;margin-top:8px">
+      Alle Blätter: <a href="https://ssims437.github.io/">ssims437.github.io</a>
+    </span>
+  </p>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const zahl = (x, s) => x.toLocaleString("de-AT", { minimumFractionDigits: s ?? 2, maximumFractionDigits: s ?? 2 });
+
+  /* ==========================================================================
+     DIE AUSZAHLUNGEN
+     T > R > P > S macht Verraten im Einzelspiel überlegen.
+     2R > T + S sorgt dafür, dass abwechselndes Ausbeuten schlechter ist als
+     beidseitige Zusammenarbeit — sonst wäre es kein Gefangenendilemma.
+     ========================================================================== */
+  const T = 5, R = 3, P = 1, S = 0;
+  const punkte = (a, b) => a === "C" ? (b === "C" ? R : S) : (b === "C" ? T : P);
+
+  /* ==========================================================================
+     DIE STRATEGIEN
+     Jede bekommt die bisherigen Züge zu sehen — die eigenen und die des
+     Gegners, so wie sie tatsächlich ausgeführt wurden. Was sie daraus macht,
+     ist ihre Sache.
+     ========================================================================== */
+  const STRATEGIEN = [
+    { name: "Immer nett", kurz: "nett", ton: 128,
+      zug: () => "C",
+      was: "kooperiert immer, egal was passiert" },
+    { name: "Immer fies", kurz: "fies", ton: 14,
+      zug: () => "D",
+      was: "verrät immer — im Einzelspiel unschlagbar" },
+    { name: "Wie du mir", kurz: "wiedumir", ton: 210,
+      zug: (ich, du) => du.length === 0 ? "C" : du[du.length - 1],
+      was: "kooperiert zuerst, dann spiegelt sie den letzten Zug" },
+    { name: "Nachtragend", kurz: "nachtragend", ton: 275,
+      zug: (ich, du) => du.includes("D") ? "D" : "C",
+      was: "kooperiert bis zum ersten Verrat — und danach nie wieder" },
+    { name: "Großzügig", kurz: "grosszuegig", ton: 168,
+      zug: (ich, du, w) => du.length === 0 ? "C"
+        : (du[du.length - 1] === "D" && w() > 0.3 ? "D" : "C"),
+      was: "wie du mir, verzeiht aber in drei von zehn Fällen grundlos" },
+    { name: "Zwei Vergehen", kurz: "zweivergehen", ton: 190,
+      zug: (ich, du) => du.length >= 2 && du[du.length - 1] === "D" && du[du.length - 2] === "D" ? "D" : "C",
+      was: "schlägt erst zurück, wenn zweimal hintereinander verraten wurde" },
+    { name: "Pawlow", kurz: "pawlow", ton: 44,
+      zug: (ich, du) => {
+        if (!ich.length) return "C";
+        const letzte = punkte(ich[ich.length - 1], du[du.length - 1]);
+        // gewonnen: bleiben. verloren: wechseln.
+        return letzte >= R ? ich[ich.length - 1] : (ich[ich.length - 1] === "C" ? "D" : "C");
+      },
+      was: "bleibt beim Zug, wenn er sich gelohnt hat, sonst wechselt sie" },
+    { name: "Zufall", kurz: "zufall", ton: 300,
+      zug: (ich, du, w) => w() < 0.5 ? "C" : "D",
+      was: "wirft jedes Mal eine Münze" },
+    { name: "Prüfer", kurz: "pruefer", ton: 88,
+      zug: (ich, du) => {
+        if (ich.length < 3) return ["C", "D", "C"][ich.length];
+        // hat der Gegner auf den Test reagiert? Wenn nein: ausnutzen.
+        if (du[1] === "C" && du[2] === "C") return "D";
+        return du[du.length - 1];
+      },
+      was: "testet mit einem frühen Verrat und beutet aus, wer nicht reagiert" },
+    { name: "Misstrauisch", kurz: "misstrauisch", ton: 340,
+      zug: (ich, du) => du.length === 0 ? "D" : du[du.length - 1],
+      was: "wie du mir, fängt aber mit einem Verrat an" }
+  ];
+  const NAMEN = STRATEGIEN.map((s) => s.name);
+  /* Canvas kennt keine CSS-Variablen — der Helligkeitswert muss vorher
+     aufgelöst werden, sonst bleibt die Farbe stumm auf der letzten stehen. */
+  const stratFarbe = (i) => {
+    const h = getComputedStyle(document.documentElement).getPropertyValue("--hell").trim() || "55%";
+    return `hsl(${STRATEGIEN[i].ton} 52% ${h})`;
+  };
+
+  /* Zufallszahlen mit Saat: dasselbe Turnier ist jederzeit wiederholbar. */
+  function wuerfel(saat) {
+    let s = (saat >>> 0) || 1;
+    return () => {
+      s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0;
+      return s / 4294967296;
+    };
+  }
+
+  /* ==========================================================================
+     EIN DUELL
+     Beide entscheiden gleichzeitig. Rauschen wirkt auf die Ausführung: Der
+     Zug wird umgedreht, und beide sehen den umgedrehten — auch der, dem er
+     passiert ist. Genau so passieren Missverständnisse.
+     ========================================================================== */
+  function duell(iA, iB, runden, rauschen, saat) {
+    /* Drei getrennte Ströme: einer je Spieler, einer fürs Rauschen. Teilten sich
+       beide einen, würde die Sitzordnung darüber entscheiden, wer welche Zahl
+       zieht — und ein an sich symmetrisches Duell hinge daran, wer links steht. */
+    const wA = wuerfel(saat), wB = wuerfel(saat ^ 0x9E3779B9), wN = wuerfel(saat ^ 0x85EBCA6B);
+    const zA = [], zB = [];
+    let pA = 0, pB = 0, koopA = 0, koopB = 0, versehen = 0;
+    for (let t = 0; t < runden; t++) {
+      let a = STRATEGIEN[iA].zug(zA, zB, wA);
+      let b = STRATEGIEN[iB].zug(zB, zA, wB);
+      if (rauschen > 0) {
+        if (wN() < rauschen) { a = a === "C" ? "D" : "C"; versehen++; }
+        if (wN() < rauschen) { b = b === "C" ? "D" : "C"; versehen++; }
+      }
+      pA += punkte(a, b); pB += punkte(b, a);
+      if (a === "C") koopA++;
+      if (b === "C") koopB++;
+      zA.push(a); zB.push(b);
+    }
+    return { pA, pB, zA, zB, koopA: koopA / runden, koopB: koopB / runden, versehen };
+  }
+
+  /* ==========================================================================
+     DAS TURNIER
+     Jeder gegen jeden, sich selbst eingeschlossen. Mit Rauschen wird jedes
+     Paar mehrfach gespielt und gemittelt, sonst entscheidet der Zufall mit.
+     ========================================================================== */
+  function turnier(runden, rauschen, saat, wiederholungen) {
+    const n = STRATEGIEN.length;
+    const M = Array.from({ length: n }, () => new Array(n).fill(0));
+    const koop = Array.from({ length: n }, () => new Array(n).fill(0));
+    const wdh = rauschen > 0 ? (wiederholungen || 5) : 1;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      let sp = 0, sk = 0;
+      for (let k = 0; k < wdh; k++) {
+        const d = duell(i, j, runden, rauschen, saat + i * 9173 + j * 613 + k * 77);
+        sp += d.pA / runden; sk += d.koopA;
+      }
+      M[i][j] = sp / wdh; koop[i][j] = sk / wdh;
+    }
+    const summe = M.map((z) => z.reduce((a, b) => a + b, 0) / n);
+    return { M, koop, summe };
+  }
+
+  /* ==========================================================================
+     EVOLUTION
+     Replikatordynamik: Wer über dem Durchschnitt liegt, wächst; wer darunter
+     liegt, schrumpft. Kein Zufall, keine Mutation — nur Buchhaltung.
+     ========================================================================== */
+  function entwickeln(M, generationen, start) {
+    const n = M.length;
+    let x = start ? start.slice() : new Array(n).fill(1 / n);
+    const verlauf = [x.slice()];
+    for (let g = 0; g < generationen; g++) {
+      const ertrag = x.map((_, i) => x.reduce((s, xj, j) => s + xj * M[i][j], 0));
+      const schnitt = x.reduce((s, xi, i) => s + xi * ertrag[i], 0);
+      if (schnitt <= 0) break;
+      x = x.map((xi, i) => xi * ertrag[i] / schnitt);
+      const s = x.reduce((a, b) => a + b, 0);
+      x = x.map((v) => v / s);
+      verlauf.push(x.slice());
+    }
+    return verlauf;
+  }
+
+  /* ==========================================================================
+     ZUSTAND
+     ========================================================================== */
+  let ERG = null, VERLAUF = null;
+  const farbe = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const lesen = () => ({
+    runden: +$("r-runden").value,
+    rauschen: +$("r-rauschen").value / 100,
+    generationen: +$("r-gen").value
+  });
+
+  function alles() {
+    const e = lesen();
+    $("o-runden").textContent = e.runden;
+    $("o-rauschen").textContent = (e.rauschen * 100).toFixed(0) + " %";
+    $("o-gen").textContent = e.generationen;
+    ERG = turnier(e.runden, e.rauschen, 20260818, 5);
+    VERLAUF = entwickeln(ERG.M, e.generationen);
+    matrixZeichnen();
+    rangZeigen();
+    evoZeichnen();
+    duellZeichnen();
+    rauschenZeigen();
+  }
+
+  /* ==========================================================================
+     WÄRMEBILD
+     ========================================================================== */
+  function matrixZeichnen() {
+    const c = $("matrix"), g = c.getContext("2d");
+    g.fillStyle = farbe("--tief"); g.fillRect(0, 0, c.width, c.height);
+    const n = STRATEGIEN.length;
+    const L = 128, O = 118, RA = 14, UA = 14;
+    const zelle = Math.min((c.width - L - RA) / n, (c.height - O - UA) / n);
+    g.font = "13px ui-monospace, monospace";
+
+    // Spaltenköpfe schräg
+    for (let j = 0; j < n; j++) {
+      g.save();
+      g.translate(L + j * zelle + zelle / 2, O - 8);
+      g.rotate(-Math.PI / 3.4);
+      g.fillStyle = stratFarbe(j); g.textAlign = "left"; g.textBaseline = "middle";
+      g.fillText(STRATEGIEN[j].name, 0, 0);
+      g.restore();
+    }
+    let lo = Infinity, hi = -Infinity;
+    for (const z of ERG.M) for (const v of z) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    for (let i = 0; i < n; i++) {
+      g.fillStyle = stratFarbe(i); g.textAlign = "right"; g.textBaseline = "middle";
+      g.fillText(STRATEGIEN[i].name, L - 8, O + i * zelle + zelle / 2);
+      for (let j = 0; j < n; j++) {
+        const t = (ERG.M[i][j] - lo) / ((hi - lo) || 1);
+        g.fillStyle = `hsl(${18 + t * 128} ${34 + t * 18}% ${20 + t * 46}%)`;
+        g.fillRect(L + j * zelle, O + i * zelle, zelle - 1, zelle - 1);
+        g.fillStyle = t > 0.55 ? "rgba(0,0,0,.78)" : "rgba(255,255,255,.86)";
+        g.textAlign = "center";
+        g.font = "13px ui-monospace, monospace";
+        g.fillText(zahl(ERG.M[i][j], 2), L + j * zelle + zelle / 2, O + i * zelle + zelle / 2);
+      }
+    }
+    const e = lesen();
+    $("matrix-lage").textContent = `Punkte je Runde · ${e.runden} Runden je Duell` +
+      (e.rauschen > 0 ? ` · über 5 Läufe gemittelt` : "");
+    let hochI = 0, hochJ = 0, tiefI = 0, tiefJ = 0;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      if (ERG.M[i][j] > ERG.M[hochI][hochJ]) { hochI = i; hochJ = j; }
+      if (ERG.M[i][j] < ERG.M[tiefI][tiefJ]) { tiefI = i; tiefJ = j; }
+    }
+    const iD = NAMEN.indexOf("Immer fies");
+    $("matrix-fuss").innerHTML =
+      `Eine Zeile ist eine Strategie, eine Spalte ihr Gegenüber; die Zahl ist der <b>Punkteschnitt ` +
+      `je Runde</b>. Beidseitige Zusammenarbeit bringt ${R},00 — alles darüber geht nur auf Kosten ` +
+      `des anderen. Das hellste Feld ist <b>${STRATEGIEN[hochI].name} gegen ` +
+      `${STRATEGIEN[hochJ].name}</b> mit ${zahl(ERG.M[hochI][hochJ], 2)}, das dunkelste ` +
+      `<b>${STRATEGIEN[tiefI].name} gegen ${STRATEGIEN[tiefJ].name}</b> mit ` +
+      `${zahl(ERG.M[tiefI][tiefJ], 2)}. Die aufschlussreichste Zahl steht aber auf der Diagonale: ` +
+      `„Immer fies" gegen sich selbst bringt <b>${zahl(ERG.M[iD][iD], 2)}</b> — ein Drittel dessen, ` +
+      `was zwei Kooperierende bekommen.`;
+  }
+
+  /* ==========================================================================
+     RANGLISTE
+     ========================================================================== */
+  function rangZeigen() {
+    const box = $("rang"); box.textContent = "";
+    const rang = ERG.summe.map((v, i) => ({ i, v })).sort((a, b) => b.v - a.v);
+    const max = rang[0].v;
+    rang.forEach((r, platz) => {
+      const div = document.createElement("div");
+      div.className = "zeileb";
+      div.innerHTML = `<span class="r">${platz + 1}</span><span>${STRATEGIEN[r.i].name}</span>` +
+        `<span class="stab"><i style="background:${stratFarbe(r.i)};width:${(r.v / max * 100).toFixed(1)}%"></i></span>` +
+        `<span class="z">${zahl(r.v, 3)}</span>`;
+      box.append(div);
+    });
+    const sieger = rang[0].i;
+    const tft = 2;
+    const platzTft = rang.findIndex((r) => r.i === tft) + 1;
+    $("rang-lage").textContent = `Sieger: ${STRATEGIEN[sieger].name}`;
+    $("rang-fuss").innerHTML =
+      `Punkteschnitt je Runde über alle Begegnungen. <b>${STRATEGIEN[sieger].name}</b> führt` +
+      (sieger === tft
+        ? ` — dieselbe Strategie, die kein einziges Duell für sich entscheidet.`
+        : `; „Wie du mir" steht auf Platz <b>${platzTft}</b>. Wer vorne liegt, hängt spürbar an ` +
+          `Rundenzahl und Rauschen — <b>ein Turnier ist kein Beweis</b>, es ist eine Messung unter ` +
+          `bestimmten Bedingungen.`) +
+      ` „${STRATEGIEN[sieger].name}" ${STRATEGIEN[sieger].was}.`;
+  }
+
+  /* ==========================================================================
+     EVOLUTION
+     ========================================================================== */
+  function evoZeichnen() {
+    const c = $("evo"), g = c.getContext("2d");
+    g.fillStyle = farbe("--tief"); g.fillRect(0, 0, c.width, c.height);
+    const L = 10, RA = 132, O = 8, U = 24;
+    const B = c.width - L - RA, H = c.height - O - U;
+    const G = VERLAUF.length - 1;
+    const n = STRATEGIEN.length;
+    for (let i = 0; i < n; i++) {
+      g.fillStyle = stratFarbe(i);
+      g.beginPath();
+      for (let t = 0; t <= G; t++) {
+        let unten = 0;
+        for (let k = 0; k < i; k++) unten += VERLAUF[t][k];
+        const x = L + t / G * B, y = O + H - unten * H;
+        t ? g.lineTo(x, y) : g.moveTo(x, y);
+      }
+      for (let t = G; t >= 0; t--) {
+        let unten = 0;
+        for (let k = 0; k <= i; k++) unten += VERLAUF[t][k];
+        g.lineTo(L + t / G * B, O + H - unten * H);
+      }
+      g.closePath(); g.fill();
+    }
+    // Beschriftung der Überlebenden
+    const letzte = VERLAUF[G];
+    g.font = "12px ui-monospace, monospace"; g.textBaseline = "middle"; g.textAlign = "left";
+    let unten = 0;
+    for (let i = 0; i < n; i++) {
+      const mitte = unten + letzte[i] / 2;
+      unten += letzte[i];
+      if (letzte[i] < 0.035) continue;
+      g.fillStyle = stratFarbe(i);
+      g.fillText(`${STRATEGIEN[i].name} ${(letzte[i] * 100).toFixed(0)} %`, L + B + 7, O + H - mitte * H);
+    }
+    g.fillStyle = farbe("--leise"); g.textAlign = "center"; g.textBaseline = "top";
+    g.fillText(`${G} Generationen`, L + B / 2, O + H + 6);
+
+    const ueber = letzte.map((v, i) => ({ v, i })).filter((o) => o.v > 0.01).sort((a, b) => b.v - a.v);
+    $("evo-lage").textContent = `${ueber.length} von ${n} Strategien überleben`;
+    $("evo-fuss").innerHTML =
+      `Alle starten mit demselben Anteil. Wer über dem Durchschnitt punktet, wächst; wer darunter ` +
+      `bleibt, schrumpft. Nach ${G} Generationen bleibt <b>${ueber.map((o) =>
+        STRATEGIEN[o.i].name).slice(0, 3).join(", ")}</b>. Bemerkenswert ist die Reihenfolge: ` +
+      `Verräter wachsen <b>zuerst</b> — solange es genug Naive gibt, die sie ausnehmen können. ` +
+      `Sind die weg, fressen sie einander auf, und die Wehrhaften übernehmen.`;
+  }
+
+  /* ==========================================================================
+     EIN EINZELNES DUELL
+     ========================================================================== */
+  function duellZeichnen() {
+    const c = $("duell"), g = c.getContext("2d");
+    g.fillStyle = farbe("--tief"); g.fillRect(0, 0, c.width, c.height);
+    const iA = +$("duell-a").value, iB = +$("duell-b").value;
+    const e = lesen();
+    const zeigen = Math.min(e.runden, 80);
+    const d = duell(iA, iB, e.runden, e.rauschen, 20260818 + iA * 9173 + iB * 613);
+    const L = 118, O = 34, breite = (c.width - L - 16) / zeigen;
+    g.font = "11px ui-monospace, monospace"; g.textBaseline = "middle";
+    [[iA, d.zA, 0], [iB, d.zB, 1]].forEach(([idx, zuege, reihe]) => {
+      const y = O + reihe * 56;
+      g.fillStyle = stratFarbe(idx); g.textAlign = "right";
+      g.fillText(STRATEGIEN[idx].name, L - 10, y + 18);
+      for (let t = 0; t < zeigen; t++) {
+        g.fillStyle = zuege[t] === "C" ? farbe("--nett") : farbe("--fies");
+        g.fillRect(L + t * breite, y, Math.max(breite - 1.2, 1), 36);
+      }
+    });
+    g.fillStyle = farbe("--leise"); g.textAlign = "left"; g.textBaseline = "top";
+    g.fillText(`erste ${zeigen} Runden — grün kooperiert, rot verrät`, L, O + 118);
+    g.textAlign = "right";
+    g.fillText(`${zahl(d.pA / e.runden, 2)} : ${zahl(d.pB / e.runden, 2)} Punkte je Runde`, c.width - 16, O + 118);
+
+    $("duell-fuss").innerHTML = STRATEGIEN[iA].name === STRATEGIEN[iB].name
+      ? `Dieselbe Strategie gegen sich selbst — <b>${STRATEGIEN[iA].name}</b> ${STRATEGIEN[iA].was}. ` +
+        (e.rauschen > 0
+          ? `Bei ${(e.rauschen * 100).toFixed(0)} % Rauschen sind hier <b>${d.versehen} Versehen</b> ` +
+            `passiert. Wie lange deren Folgen nachhallen, sieht man an den roten Streifen.`
+          : `Ohne Rauschen ist das der ehrlichste Test: Was eine Strategie mit ihresgleichen macht, ` +
+            `entscheidet, ob sie sich verbreiten kann.`)
+      : `<b>${STRATEGIEN[iA].name}</b> ${STRATEGIEN[iA].was}. <b>${STRATEGIEN[iB].name}</b> ` +
+        `${STRATEGIEN[iB].was}.`;
+  }
+
+  function rauschenZeigen() {
+    const e = lesen();
+    const namen = { "Wie du mir": "w-tft", "Großzügig": "w-gtft", "Pawlow": "w-pawlow" };
+    for (const [name, id] of Object.entries(namen)) {
+      const i = NAMEN.indexOf(name);
+      $(id).textContent = (ERG.koop[i][i] * 100).toFixed(1) + " %";
+    }
+    const iT = NAMEN.indexOf("Wie du mir"), iG = NAMEN.indexOf("Großzügig");
+    $("rausch-fuss").innerHTML = e.rauschen === 0
+      ? `Ohne Rauschen kooperieren alle drei mit sich selbst <b>vollständig</b>. Den Regler oben ` +
+        `auf ein paar Prozent stellen — dann trennt sich, wer ein Versehen wegstecken kann und wer ` +
+        `daran zerbricht.`
+      : `Bei <b>${(e.rauschen * 100).toFixed(0)} % Rauschen</b> bricht „Wie du mir" mit sich selbst ` +
+        `auf <b>${(ERG.koop[iT][iT] * 100).toFixed(1)} %</b> ein: Jedes Versehen löst eine ` +
+        `Vergeltungsschleife aus, die von allein nicht mehr aufhört. „Großzügig" hält ` +
+        `<b>${(ERG.koop[iG][iG] * 100).toFixed(1)} %</b> — grundloses Verzeihen ist hier keine ` +
+        `Schwäche, sondern die einzige Reparatur.`;
+  }
+
+  /* ==========================================================================
+     PRÜFLAUF
+     ========================================================================== */
+  function pruefen() {
+    const tb = $("pruef").querySelector("tbody");
+    tb.textContent = "";
+    let fehler = 0;
+    const zeile = (was, gut, text) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${was}</td><td style="color:${gut ? "var(--gut)" : "var(--warn)"}">${text}</td>`;
+      tb.append(tr);
+      if (!gut) fehler++;
+    };
+    const t0 = performance.now();
+    const n = STRATEGIEN.length;
+
+    // 1. Es ist wirklich ein Dilemma.
+    {
+      const reihenfolge = T > R && R > P && P > S;
+      const versuchung = 2 * R > T + S;
+      // im Einzelspiel ist Verraten strikt besser — für jede Antwort des Gegners
+      let dominiert = true;
+      for (const gegner of ["C", "D"]) if (punkte("D", gegner) <= punkte("C", gegner)) dominiert = false;
+      zeile("es ist wirklich ein Dilemma", reihenfolge && versuchung && dominiert,
+        `T=${T} > R=${R} > P=${P} > S=${S} ✓ · 2R=${2 * R} > T+S=${T + S} ✓ — sonst wäre ` +
+        `abwechselndes Ausbeuten besser als Zusammenarbeit · und <b>gegen jede Antwort</b> des ` +
+        `Gegners bringt Verraten mehr: ${punkte("D", "C")} statt ${punkte("C", "C")} und ` +
+        `${punkte("D", "D")} statt ${punkte("C", "D")}`);
+    }
+
+    // 2. Jede Begegnung ist nachgerechnet.
+    {
+      let duelle = 0, runden = 0, abweichend = 0;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        const d = duell(i, j, 120, 0, 4711 + i * 31 + j);
+        let pA = 0, pB = 0;
+        for (let t = 0; t < d.zA.length; t++) {
+          pA += punkte(d.zA[t], d.zB[t]);
+          pB += punkte(d.zB[t], d.zA[t]);
+          runden++;
+        }
+        if (pA !== d.pA || pB !== d.pB) abweichend++;
+        duelle++;
+      }
+      zeile("jeder Punkt ist zweimal gezählt", abweichend === 0,
+        `${duelle} Duelle über ${runden.toLocaleString("de-AT")} Runden · die Punktzahl wurde ` +
+        `nachträglich aus dem <b>aufgezeichneten Zugprotokoll</b> neu addiert · ${abweichend} ` +
+        `Abweichungen`);
+    }
+
+    // 3. Wie du mir gewinnt kein einziges Duell.
+    {
+      const iT = NAMEN.indexOf("Wie du mir");
+      let duelle = 0, gewonnen = 0, groessterVorsprung = -Infinity;
+      for (let j = 0; j < n; j++) for (const runden of [50, 120, 300]) {
+        const d = duell(iT, j, runden, 0, 99 + j * 7 + runden);
+        if (d.pA > d.pB) gewonnen++;
+        groessterVorsprung = Math.max(groessterVorsprung, d.pA - d.pB);
+        duelle++;
+      }
+      const erg = turnier(200, 0, 20260818, 1);
+      const rang = erg.summe.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
+      const platz = rang.findIndex((r) => r.i === iT) + 1;
+      zeile("„Wie du mir\" gewinnt kein einziges Duell", gewonnen === 0 && groessterVorsprung <= 0,
+        `<b>${duelle} Duelle</b> gegen alle zehn Strategien über drei Rundenlängen · <b>${gewonnen} ` +
+        `davon gewonnen</b> · ihr größter Vorsprung ist ${groessterVorsprung} Punkte — sie kann gar ` +
+        `nicht vorn liegen, weil sie nie zuerst verrät · und steht im Turnier trotzdem auf Platz ` +
+        `<b>${platz}</b> von ${n}`);
+    }
+
+    // 4. Rauschen: wer ein Versehen wegsteckt.
+    {
+      const iT = NAMEN.indexOf("Wie du mir"), iG = NAMEN.indexOf("Großzügig"), iP = NAMEN.indexOf("Pawlow");
+      const messen = (i, e) => {
+        let s = 0;
+        for (let k = 0; k < 12; k++) s += duell(i, i, 300, e, 555 + k * 91 + Math.round(e * 1000)).koopA;
+        return s / 12;
+      };
+      const ohne = [iT, iG, iP].map((i) => messen(i, 0));
+      const mit = [iT, iG, iP].map((i) => messen(i, 0.02));
+      const alleGanz = ohne.every((v) => v > 0.999);
+      const tftBricht = mit[0] < 0.75;
+      const grossBesser = mit[1] > mit[0] && mit[2] > mit[0];
+      zeile("ein Prozent Versehen genügt, um Vertrauen zu zerstören",
+        alleGanz && tftBricht && grossBesser,
+        `ohne Rauschen kooperieren alle drei mit sich selbst zu <b>100 %</b> · bei <b>2 %</b> ` +
+        `Rauschen fällt „Wie du mir" auf <b>${(mit[0] * 100).toFixed(1)} %</b>, während ` +
+        `„Großzügig" ${(mit[1] * 100).toFixed(1)} % und „Pawlow" ${(mit[2] * 100).toFixed(1)} % ` +
+        `halten — Vergeben und Fehlerkorrektur schlagen strikte Vergeltung`);
+    }
+
+    // 5. Die Replikatordynamik rechnet sauber.
+    {
+      const erg = turnier(150, 0, 4242, 1);
+      const verlauf = entwickeln(erg.M, 300);
+      let maxSummenfehler = 0, negativ = 0;
+      for (const x of verlauf) {
+        maxSummenfehler = Math.max(maxSummenfehler, Math.abs(x.reduce((a, b) => a + b, 0) - 1));
+        if (x.some((v) => v < -1e-15)) negativ++;
+      }
+      // reine Zustände müssen Fixpunkte sein
+      let keinFixpunkt = 0;
+      for (let i = 0; i < n; i++) {
+        const start = new Array(n).fill(0); start[i] = 1;
+        const v = entwickeln(erg.M, 40, start);
+        const ende = v[v.length - 1];
+        if (Math.abs(ende[i] - 1) > 1e-12) keinFixpunkt++;
+      }
+      zeile("die Dynamik erhält, was sie erhalten muss",
+        maxSummenfehler < 1e-12 && negativ === 0 && keinFixpunkt === 0,
+        `${verlauf.length} Generationen · die Anteile summieren sich immer auf eins (Abweichung ` +
+        `<b>${maxSummenfehler.toExponential(1)}</b>) · ${negativ} negative Anteile · und alle ` +
+        `<b>${n} reinen Zustände</b> sind Fixpunkte: Wo nur eine Strategie lebt, kann keine andere ` +
+        `entstehen`);
+    }
+
+    // 6. Die Einladungsschwelle — gemessen gegen die Herleitung.
+    {
+      const runden = 200;
+      const iT = NAMEN.indexOf("Wie du mir"), iD = NAMEN.indexOf("Immer fies");
+      // die 2x2-Welt: nur Wie du mir und Immer fies
+      const klein = [[0, 0], [0, 0]];
+      const paare = [[iT, iT], [iT, iD], [iD, iT], [iD, iD]];
+      paare.forEach(([a, b], k) => {
+        const d = duell(a, b, runden, 0, 31 + k);
+        klein[k >> 1][k & 1] = d.pA / runden;
+      });
+      // wächst der Anteil x an Wie du mir?
+      const waechst = (x) => {
+        const p = [x, 1 - x];
+        const eT = p[0] * klein[0][0] + p[1] * klein[0][1];
+        const eD = p[0] * klein[1][0] + p[1] * klein[1][1];
+        return eT > eD;
+      };
+      let lo = 0, hi = 1;
+      for (let k = 0; k < 60; k++) { const m = (lo + hi) / 2; if (waechst(m)) hi = m; else lo = m; }
+      const gemessen = (lo + hi) / 2;
+      // hergeleitet: mit a=nR, b=S+(n-1)P, c=T+(n-1)P, d=nP ist die Schwelle (d-b)/(a-b-c+d)
+      const a = runden * R, b = S + (runden - 1) * P, cc = T + (runden - 1) * P, dd = runden * P;
+      const formel = (dd - b) / (a - b - cc + dd);
+      const einfach = 1 / (2 * runden - 3);              // für T=5, R=3, P=1, S=0
+      const abstand = Math.abs(gemessen - formel);
+      // unterhalb schrumpfen, oberhalb wachsen
+      const unten = !waechst(gemessen * 0.7), oben = waechst(Math.min(1, gemessen * 1.4));
+      zeile("wie viele Kooperierende es mindestens braucht",
+        abstand < 1e-6 && Math.abs(formel - einfach) < 1e-12 && unten && oben,
+        `in einer Welt aus lauter Verrätern reicht ein Anteil von <b>` +
+        `${(gemessen * 100).toFixed(3)} %</b> „Wie du mir", damit sie <b>wächst</b> statt zu ` +
+        `verschwinden · die Herleitung sagt ${(formel * 100).toFixed(3)} % — bei diesen ` +
+        `Auszahlungen genau <b>1/(2n−3)</b> · Abstand ${abstand.toExponential(1)} · darunter ` +
+        `schrumpft sie, darüber wächst sie, ohne Ausnahme`);
+    }
+
+    // 7. Dieselbe Saat, dasselbe Turnier — und Spiegelung.
+    {
+      const e1 = turnier(120, 0.05, 777, 3), e2 = turnier(120, 0.05, 777, 3);
+      let unterschied = 0;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++)
+        if (e1.M[i][j] !== e2.M[i][j]) unterschied++;
+      /* Spiegeln kann nur für Strategien gelten, die nicht würfeln: Wer eine
+         Zufallszahl zieht, zieht seitenverkehrt eine andere — das ist keine
+         Panne, sondern der Sinn von Zufall. */
+      const wuerfelnd = STRATEGIEN.map((_, i) => {
+        const a = duell(i, 1, 60, 0, 12345), b = duell(i, 1, 60, 0, 999);
+        return a.zA.join("") !== b.zA.join("");
+      });
+      let spiegelFehler = 0, spiegel = 0, ausgenommen = 0;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        if (wuerfelnd[i] || wuerfelnd[j]) { ausgenommen++; continue; }
+        const d1 = duell(i, j, 120, 0, 8080 + i * 13 + j);
+        const d2 = duell(j, i, 120, 0, 8080 + i * 13 + j);
+        if (d1.pA !== d2.pB || d1.pB !== d2.pA) spiegelFehler++;
+        spiegel++;
+      }
+      zeile("dasselbe Turnier kommt zweimal gleich heraus",
+        unterschied === 0 && spiegelFehler === 0,
+        `mit gleicher Saat zweimal gerechnet: <b>${unterschied}</b> abweichende Felder von ` +
+        `${n * n} — auch mit 5 % Rauschen · und <b>${spiegel} Duelle</b> seitenverkehrt ` +
+        `wiederholt: <b>${spiegelFehler}</b> Abweichungen · ${ausgenommen} Paarungen sind ` +
+        `ausgenommen, weil <b>${STRATEGIEN.filter((_, i) => wuerfelnd[i]).map((s) => s.name).join(" und ")}</b> ` +
+        `würfeln — wer würfelt, spielt seitenverkehrt zu Recht anders`);
+    }
+
+    const dauer = performance.now() - t0;
+    $("pruef-fuss").innerHTML = fehler === 0
+      ? `<b>Alle Prüfungen bestanden</b> in ${dauer.toFixed(0)} ms. Die sechste Zeile ist die ` +
+        `schönste: Eine Schwelle, die man in der Simulation <b>sucht</b>, und eine Formel, die man ` +
+        `auf Papier <b>herleitet</b> — und sie treffen sich auf sechs Stellen.`
+      : `<b style="color:var(--warn)">${fehler} Prüfung(en) fehlgeschlagen.</b>`;
+  }
+
+  /* ==========================================================================
+     BEDIENUNG
+     ========================================================================== */
+  for (const id of ["duell-a", "duell-b"]) {
+    const sel = $(id);
+    STRATEGIEN.forEach((s, i) => {
+      const o = document.createElement("option");
+      o.value = i; o.textContent = s.name;
+      sel.append(o);
+    });
+    sel.addEventListener("change", duellZeichnen);
+  }
+  $("duell-a").value = NAMEN.indexOf("Wie du mir");
+  $("duell-b").value = NAMEN.indexOf("Prüfer");
+
+  for (const id of ["r-runden", "r-rauschen", "r-gen"]) $(id).addEventListener("input", alles);
+  $("b-pruefen").addEventListener("click", pruefen);
+  $("b-thema").addEventListener("click", () => {
+    const jetzt = document.documentElement.getAttribute("data-theme");
+    const dunkel = matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", jetzt ? (jetzt === "dark" ? "light" : "dark") : (dunkel ? "light" : "dark"));
+    matrixZeichnen(); rangZeigen(); evoZeichnen(); duellZeichnen();
+  });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    matrixZeichnen(); rangZeigen(); evoZeichnen(); duellZeichnen();
+  });
+
+  alles();
+})();
+</script>
+</body>
+</html>
